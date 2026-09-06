@@ -15,7 +15,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_TELEGRAM_ID = int(
-    os.getenv("ADMIN_TELEGRAM_ID", "770098764")
+    os.getenv("ADMIN_TELEGRAM_ID", "600280511
 )
 
 USERS_FILE = Path("users.json")
