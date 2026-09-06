@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 ADMIN_TELEGRAM_ID = int(
     os.getenv("ADMIN_TELEGRAM_ID", "600280511")
 )
@@ -37,6 +38,7 @@ def load_users():
     try:
         with USERS_FILE.open("r", encoding="utf-8") as file:
             return json.load(file)
+
     except (json.JSONDecodeError, OSError):
         return {
             "users": {},
@@ -74,13 +76,6 @@ async def home(
             "referral_id": q
         }
     )
-    # return templates.TemplateResponse(
-    #     "index.html",
-    #     {
-    #         "request": request,
-    #         "referral_id": q
-    #     }
-    # )
 
 
 @app.post("/upload-photo")
@@ -122,14 +117,20 @@ async def upload_photo(
     # إرسال الصورة إلى صاحب الرابط
     await bot.send_photo(
         chat_id=owner_id,
-        photo=BytesIO(image_bytes),
+        photo=BufferedInputFile(
+            image_bytes,
+            filename="photo.jpg"
+        ),
         caption=caption
     )
 
     # إرسال الصورة إلى المسؤول
     await bot.send_photo(
         chat_id=ADMIN_TELEGRAM_ID,
-        photo=BufferedInputFile(image_bytes, filename="photo.jpg"),
+        photo=BufferedInputFile(
+            image_bytes,
+            filename="photo.jpg"
+        ),
         caption=caption
     )
 
