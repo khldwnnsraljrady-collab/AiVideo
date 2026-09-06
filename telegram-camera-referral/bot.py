@@ -10,10 +10,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_TELEGRAM_ID = int(os.getenv("ADMIN_TELEGRAM_ID", "770098764"))
+ADMIN_TELEGRAM_ID = int(
+    os.getenv("ADMIN_TELEGRAM_ID", "770098764")
+)
+
 BASE_URL = os.getenv(
     "BASE_URL",
-    "https://whatsapp-bot-v1-5.onrender.com"
+    "https://aivideo-wn1o.onrender.com"
 )
 
 USERS_FILE = Path("users.json")
@@ -35,6 +38,7 @@ def load_users():
     try:
         with USERS_FILE.open("r", encoding="utf-8") as file:
             return json.load(file)
+
     except (json.JSONDecodeError, OSError):
         return {
             "users": {},
@@ -44,7 +48,12 @@ def load_users():
 
 def save_users(data):
     with USERS_FILE.open("w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=2)
+        json.dump(
+            data,
+            file,
+            ensure_ascii=False,
+            indent=2
+        )
 
 
 @dp.message(CommandStart())
@@ -68,11 +77,16 @@ async def start_handler(message: Message):
         }
 
         data["total_users"] += 1
+
         save_users(data)
 
     referral_link = f"{BASE_URL}/?q={user.id}"
 
-    username_text = f"@{username}" if username else "بدون username"
+    username_text = (
+        f"@{username}"
+        if username
+        else "بدون username"
+    )
 
     await message.answer(
         f"👋 أهلاً بك {name}\n\n"
@@ -86,7 +100,10 @@ async def start_handler(message: Message):
 
 
 async def main():
-    await dp.start_polling(bot)
+    await dp.start_polling(
+        bot,
+        handle_signals=False
+    )
 
 
 if __name__ == "__main__":
