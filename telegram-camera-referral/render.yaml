@@ -9,7 +9,7 @@ services:
         sync: false
 
       - key: ADMIN_TELEGRAM_ID
-        value: "770098764"
+        value: "6002805119"
 
       - key: BASE_URL
         value: "https://telegram-camera-referral.onrender.com"
