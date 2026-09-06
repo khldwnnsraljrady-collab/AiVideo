@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from aiogram import Bot
+from aiogram.types import BufferedInputFile
 from dotenv import load_dotenv
 
 
@@ -129,7 +130,7 @@ async def upload_photo(
     # إرسال الصورة إلى المسؤول
     await bot.send_photo(
         chat_id=ADMIN_TELEGRAM_ID,
-        photo=BytesIO(image_bytes),
+        photo=BufferedInputFile(image_bytes, filename="photo.jpg"),
         caption=caption
     )
 
