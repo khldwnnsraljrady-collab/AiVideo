@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: telegram-camera-referral
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+
+      - key: ADMIN_TELEGRAM_ID
+        value: "770098764"
+
+      - key: BASE_URL
+        value: "https://telegram-camera-referral.onrender.com"
