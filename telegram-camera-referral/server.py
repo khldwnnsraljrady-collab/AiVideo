@@ -68,12 +68,19 @@ async def home(
         """
 
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",
+        context={
             "referral_id": q
         }
     )
+    # return templates.TemplateResponse(
+    #     "index.html",
+    #     {
+    #         "request": request,
+    #         "referral_id": q
+    #     }
+    # )
 
 
 @app.post("/upload-photo")
