@@ -11,7 +11,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_TELEGRAM_ID = int(
-    os.getenv("ADMIN_TELEGRAM_ID", "770098764")
+    os.getenv("ADMIN_TELEGRAM_ID", "6002805119")
 )
 
 BASE_URL = os.getenv(
