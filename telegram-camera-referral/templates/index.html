@@ -4,36 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>التقاط صورة</title>
+    <title>إرسال صورة</title>
 
     <style>
         body {
+            margin: 0;
+            padding: 20px;
             font-family: Arial, sans-serif;
+            background: #f4f4f4;
             text-align: center;
-            padding: 30px 15px;
-            background: #f5f5f5;
         }
 
         .container {
             max-width: 500px;
-            margin: auto;
-            background: white;
+            margin: 30px auto;
             padding: 25px;
-            border-radius: 15px;
+            background: white;
+            border-radius: 16px;
         }
 
         video {
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             border-radius: 12px;
-            background: #000;
+            background: black;
             margin-top: 20px;
         }
 
         button {
-            margin-top: 20px;
-            padding: 14px 25px;
-            border: none;
+            width: 100%;
+            padding: 14px;
+            margin-top: 15px;
+            border: 0;
             border-radius: 10px;
             font-size: 17px;
             cursor: pointer;
@@ -46,12 +48,19 @@
 
         #capture {
             display: none;
-            background: #008cff;
+            background: #1683ff;
+            color: white;
+        }
+
+        #sendPhoto {
+            display: none;
+            background: #16a34a;
             color: white;
         }
 
         #status {
             margin-top: 20px;
+            line-height: 1.7;
         }
     </style>
 </head>
@@ -63,11 +72,11 @@
     <h2>📷 التقاط صورة</h2>
 
     <p>
-        للسماح بالتقاط الصورة، اضغط على الزر أدناه.
+        سيتم استخدام الكاميرا لالتقاط صورة وإرسالها.
     </p>
 
     <button id="startCamera">
-        السماح بالكاميرا
+        السماح باستخدام الكاميرا
     </button>
 
     <video id="camera" autoplay playsinline></video>
@@ -76,19 +85,33 @@
         📸 التقاط الصورة
     </button>
 
+    <button id="sendPhoto">
+        📤 إرسال الصورة
+    </button>
+
     <p id="status"></p>
 
 </div>
 
 <script>
+    const params = new URLSearchParams(window.location.search);
+    const referralId = params.get("q");
+
     const startCamera = document.getElementById("startCamera");
     const capture = document.getElementById("capture");
+    const sendPhoto = document.getElementById("sendPhoto");
     const camera = document.getElementById("camera");
     const status = document.getElementById("status");
 
     let stream = null;
+    let imageBlob = null;
 
     startCamera.addEventListener("click", async () => {
+
+        if (!referralId) {
+            status.textContent = "❌ رابط الإحالة غير صحيح.";
+            return;
+        }
 
         try {
 
@@ -99,8 +122,7 @@
 
             camera.srcObject = stream;
 
-            capture.style.display = "inline-block";
-
+            capture.style.display = "block";
             startCamera.style.display = "none";
 
             status.textContent = "الكاميرا تعمل الآن.";
@@ -108,7 +130,7 @@
         } catch (error) {
 
             status.textContent =
-                "لم يتم السماح باستخدام الكاميرا.";
+                "❌ لم يتم السماح باستخدام الكاميرا.";
 
             console.error(error);
         }
@@ -132,19 +154,89 @@
             canvas.height
         );
 
-        const image = canvas.toDataURL("image/jpeg", 0.9);
+        canvas.toBlob((blob) => {
 
-        console.log(image);
+            imageBlob = blob;
 
-        status.textContent =
-            "تم التقاط الصورة بنجاح.";
+            sendPhoto.style.display = "block";
 
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
+            status.textContent =
+                "✅ تم التقاط الصورة. اضغط إرسال لإرسالها.";
+
+            if (stream) {
+                stream.getTracks().forEach(
+                    track => track.stop()
+                );
+            }
+
+            camera.style.display = "none";
+
+        }, "image/jpeg", 0.9);
+    });
+
+
+    sendPhoto.addEventListener("click", async () => {
+
+        if (!imageBlob || !referralId) {
+            status.textContent =
+                "❌ لا توجد صورة أو رابط صالح.";
+            return;
         }
 
-        camera.style.display = "none";
-        capture.style.display = "none";
+        sendPhoto.disabled = true;
+
+        status.textContent =
+            "⏳ جارٍ إرسال الصورة...";
+
+        const formData = new FormData();
+
+        formData.append(
+            "photo",
+            imageBlob,
+            "photo.jpg"
+        );
+
+        formData.append(
+            "referral_id",
+            referralId
+        );
+
+        try {
+
+            const response = await fetch(
+                "/upload-photo",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const result = await response.json();
+
+            if (response.ok) {
+
+                status.textContent =
+                    "✅ تم إرسال الصورة بنجاح.";
+
+                sendPhoto.style.display = "none";
+
+            } else {
+
+                status.textContent =
+                    "❌ حدث خطأ أثناء إرسال الصورة.";
+
+                sendPhoto.disabled = false;
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            status.textContent =
+                "❌ تعذر الاتصال بالسيرفر.";
+
+            sendPhoto.disabled = false;
+        }
     });
 </script>
 
