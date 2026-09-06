@@ -15,7 +15,7 @@ ADMIN_TELEGRAM_ID = int(
 )
 
 BASE_URL = os.getenv(
-    "https://aivideo-wn1o.onrender.com",
+    "BASE_URL",
     "https://aivideo-wn1o.onrender.com"
 )
 
