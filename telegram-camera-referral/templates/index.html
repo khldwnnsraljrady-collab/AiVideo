@@ -1,1 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>التقاط صورة</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px 15px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 12px;
+            background: #000;
+            margin-top: 20px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        #startCamera {
+            background: #222;
+            color: white;
+        }
+
+        #capture {
+            display: none;
+            background: #008cff;
+            color: white;
+        }
+
+        #status {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>📷 التقاط صورة</h2>
+
+    <p>
+        للسماح بالتقاط الصورة، اضغط على الزر أدناه.
+    </p>
+
+    <button id="startCamera">
+        السماح بالكاميرا
+    </button>
+
+    <video id="camera" autoplay playsinline></video>
+
+    <button id="capture">
+        📸 التقاط الصورة
+    </button>
+
+    <p id="status"></p>
+
+</div>
+
+<script>
+    const startCamera = document.getElementById("startCamera");
+    const capture = document.getElementById("capture");
+    const camera = document.getElementById("camera");
+    const status = document.getElementById("status");
+
+    let stream = null;
+
+    startCamera.addEventListener("click", async () => {
+
+        try {
+
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false
+            });
+
+            camera.srcObject = stream;
+
+            capture.style.display = "inline-block";
+
+            startCamera.style.display = "none";
+
+            status.textContent = "الكاميرا تعمل الآن.";
+
+        } catch (error) {
+
+            status.textContent =
+                "لم يتم السماح باستخدام الكاميرا.";
+
+            console.error(error);
+        }
+    });
+
+
+    capture.addEventListener("click", () => {
+
+        const canvas = document.createElement("canvas");
+
+        canvas.width = camera.videoWidth;
+        canvas.height = camera.videoHeight;
+
+        const context = canvas.getContext("2d");
+
+        context.drawImage(
+            camera,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        const image = canvas.toDataURL("image/jpeg", 0.9);
+
+        console.log(image);
+
+        status.textContent =
+            "تم التقاط الصورة بنجاح.";
+
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        camera.style.display = "none";
+        capture.style.display = "none";
+    });
+</script>
+
+</body>
+</html>
