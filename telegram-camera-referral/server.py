@@ -1,6 +1,5 @@
 import os
 import json
-from io import BytesIO
 from pathlib import Path
 
 from fastapi import FastAPI, Query, Request, UploadFile, File, Form
