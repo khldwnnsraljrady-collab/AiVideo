@@ -244,14 +244,13 @@
 </html> -->
 
 
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>التقاط صورة</title>
+    <title>إرسال صورة</title>
 
     <style>
         body {
@@ -268,17 +267,14 @@
             padding: 25px;
             background: white;
             border-radius: 16px;
-            box-sizing: border-box;
         }
 
         video {
             width: 100%;
             max-width: 420px;
-            min-height: 250px;
             border-radius: 12px;
-            background: #000;
+            background: black;
             margin-top: 20px;
-            object-fit: cover;
         }
 
         button {
@@ -289,11 +285,6 @@
             border-radius: 10px;
             font-size: 17px;
             cursor: pointer;
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
         }
 
         #startCamera {
@@ -317,14 +308,6 @@
             margin-top: 20px;
             line-height: 1.7;
         }
-
-        #preview {
-            display: none;
-            width: 100%;
-            max-width: 420px;
-            margin-top: 20px;
-            border-radius: 12px;
-        }
     </style>
 </head>
 
@@ -342,14 +325,7 @@
         السماح باستخدام الكاميرا
     </button>
 
-    <video
-        id="camera"
-        autoplay
-        playsinline
-        muted
-    ></video>
-
-    <img id="preview" alt="معاينة الصورة">
+    <video id="camera" autoplay playsinline muted></video>
 
     <button id="capture">
         📸 التقاط الصورة
@@ -364,435 +340,161 @@
 </div>
 
 <script>
-
-    const params = new URLSearchParams(
-        window.location.search
-    );
-
+    const params = new URLSearchParams(window.location.search);
     const referralId = params.get("q");
 
-    const startCamera =
-        document.getElementById("startCamera");
-
-    const capture =
-        document.getElementById("capture");
-
-    const sendPhoto =
-        document.getElementById("sendPhoto");
-
-    const camera =
-        document.getElementById("camera");
-
-    const preview =
-        document.getElementById("preview");
-
-    const status =
-        document.getElementById("status");
-
+    const startCamera = document.getElementById("startCamera");
+    const capture = document.getElementById("capture");
+    const sendPhoto = document.getElementById("sendPhoto");
+    const camera = document.getElementById("camera");
+    const status = document.getElementById("status");
 
     let stream = null;
     let imageBlob = null;
-    let cameraReady = false;
+
+    startCamera.addEventListener("click", async () => {
+
+        if (!referralId) {
+            status.textContent = "❌ رابط الإحالة غير صحيح.";
+            return;
+        }
+
+        try {
+
+            // تحديد الكاميرا الأمامية صراحة لضمان التوافق مع الهواتف
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { 
+                    facingMode: "user" 
+                },
+                audio: false
+            });
+
+            camera.srcObject = stream;
+
+            // انتظار تهيئة أبعاد الفيديو قبل التشغيل لعلاج الشاشة السوداء
+            camera.onloadedmetadata = async () => {
+                try {
+                    await camera.play();
+                    capture.style.display = "block";
+                    startCamera.style.display = "none";
+                    status.textContent = "الكاميرا تعمل الآن.";
+                } catch (playError) {
+                    console.error(playError);
+                    status.textContent = "❌ تعذر تشغيل بث الكاميرا تلقائياً.";
+                }
+            };
+
+        } catch (error) {
+
+            status.textContent =
+                "❌ لم يتم السماح باستخدام الكاميرا أو الصفحة لا تعمل ببروتوكول HTTPS.";
+
+            console.error(error);
+        }
+    });
 
 
-    // التأكد من وجود رابط الإحالة
-    if (!referralId) {
+    capture.addEventListener("click", () => {
 
-        startCamera.disabled = true;
+        const canvas = document.createElement("canvas");
+
+        canvas.width = camera.videoWidth;
+        canvas.height = camera.videoHeight;
+
+        const context = canvas.getContext("2d");
+
+        context.drawImage(
+            camera,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        canvas.toBlob((blob) => {
+
+            imageBlob = blob;
+
+            sendPhoto.style.display = "block";
+
+            status.textContent =
+                "✅ تم التقاط الصورة. اضغط إرسال لإرسالها.";
+
+            if (stream) {
+                stream.getTracks().forEach(
+                    track => track.stop()
+                );
+            }
+
+            camera.style.display = "none";
+
+        }, "image/jpeg", 0.9);
+    });
+
+
+    sendPhoto.addEventListener("click", async () => {
+
+        if (!imageBlob || !referralId) {
+            status.textContent =
+                "❌ لا توجد صورة أو رابط صالح.";
+            return;
+        }
+
+        sendPhoto.disabled = true;
 
         status.textContent =
-            "❌ رابط الإحالة غير صحيح.";
-    }
+            "⏳ جارٍ إرسال الصورة...";
 
+        const formData = new FormData();
 
-    // تشغيل الكاميرا
-    startCamera.addEventListener(
-        "click",
-        async () => {
-
-            if (!referralId) {
-                status.textContent =
-                    "❌ رابط الإحالة غير صحيح.";
-                return;
-            }
-
-
-            if (
-                !navigator.mediaDevices ||
-                !navigator.mediaDevices.getUserMedia
-            ) {
-
-                status.textContent =
-                    "❌ هذا المتصفح لا يدعم تشغيل الكاميرا.";
-
-                return;
-            }
-
-
-            startCamera.disabled = true;
-
-            status.textContent =
-                "⏳ جارٍ تشغيل الكاميرا...";
-
-
-            try {
-
-                // طلب الكاميرا الخلفية أولًا
-                try {
-
-                    stream =
-                        await navigator.mediaDevices.getUserMedia({
-
-                            video: {
-                                facingMode: {
-                                    ideal: "environment"
-                                },
-                                width: {
-                                    ideal: 1280
-                                },
-                                height: {
-                                    ideal: 720
-                                }
-                            },
-
-                            audio: false
-                        });
-
-                } catch (error) {
-
-                    console.log(
-                        "الخلفية لم تعمل، تجربة الكاميرا العادية..."
-                    );
-
-                    // محاولة ثانية للهواتف التي لا تدعم
-                    // facingMode بشكل جيد
-                    stream =
-                        await navigator.mediaDevices.getUserMedia({
-
-                            video: true,
-                            audio: false
-                        });
-                }
-
-
-                camera.srcObject = stream;
-
-                camera.style.display = "block";
-
-
-                // انتظار وصول الفيديو فعليًا
-                await waitForCamera();
-
-
-                cameraReady = true;
-
-                capture.style.display = "block";
-
-                startCamera.style.display = "none";
-
-                status.textContent =
-                    "✅ الكاميرا تعمل الآن. يمكنك التقاط الصورة.";
-
-
-            } catch (error) {
-
-                console.error(
-                    "Camera error:",
-                    error
-                );
-
-                cameraReady = false;
-
-                startCamera.disabled = false;
-
-                status.textContent =
-                    "❌ لم يتم تشغيل الكاميرا. تأكد من السماح للمتصفح باستخدام الكاميرا.";
-
-            }
-
-        }
-    );
-
-
-    // انتظار تشغيل الفيديو
-    function waitForCamera() {
-
-        return new Promise(
-            (resolve, reject) => {
-
-                let attempts = 0;
-
-                const maxAttempts = 50;
-
-
-                const checkCamera = () => {
-
-                    attempts++;
-
-
-                    if (
-                        camera.readyState >= 2 &&
-                        camera.videoWidth > 0 &&
-                        camera.videoHeight > 0
-                    ) {
-
-                        console.log(
-                            "Camera ready:",
-                            camera.videoWidth,
-                            camera.videoHeight
-                        );
-
-                        resolve();
-
-                        return;
-                    }
-
-
-                    if (attempts >= maxAttempts) {
-
-                        reject(
-                            new Error(
-                                "Camera video did not start"
-                            )
-                        );
-
-                        return;
-                    }
-
-
-                    setTimeout(
-                        checkCamera,
-                        200
-                    );
-                };
-
-
-                checkCamera();
-            }
+        formData.append(
+            "photo",
+            imageBlob,
+            "photo.jpg"
         );
-    }
 
+        formData.append(
+            "referral_id",
+            referralId
+        );
 
-    // التقاط الصورة
-    capture.addEventListener(
-        "click",
-        () => {
+        try {
 
-            // منع التقاط صورة سوداء
-            if (!cameraReady) {
-
-                status.textContent =
-                    "⏳ انتظر حتى تعمل الكاميرا.";
-
-                return;
-            }
-
-
-            if (
-                camera.videoWidth <= 0 ||
-                camera.videoHeight <= 0
-            ) {
-
-                status.textContent =
-                    "❌ الكاميرا لم تبدأ بشكل صحيح. حاول مرة أخرى.";
-
-                return;
-            }
-
-
-            const canvas =
-                document.createElement("canvas");
-
-
-            canvas.width =
-                camera.videoWidth;
-
-            canvas.height =
-                camera.videoHeight;
-
-
-            const context =
-                canvas.getContext("2d");
-
-
-            if (!context) {
-
-                status.textContent =
-                    "❌ تعذر معالجة الصورة.";
-
-                return;
-            }
-
-
-            context.drawImage(
-                camera,
-                0,
-                0,
-                canvas.width,
-                canvas.height
+            const response = await fetch(
+                "/upload-photo",
+                {
+                    method: "POST",
+                    body: formData
+                }
             );
 
+            const result = await response.json();
 
-            // معاينة الصورة قبل الإرسال
-            preview.src =
-                canvas.toDataURL(
-                    "image/jpeg",
-                    0.9
-                );
-
-            preview.style.display =
-                "block";
-
-
-            canvas.toBlob(
-                (blob) => {
-
-                    if (!blob) {
-
-                        status.textContent =
-                            "❌ فشل إنشاء الصورة.";
-
-                        return;
-                    }
-
-
-                    imageBlob = blob;
-
-
-                    sendPhoto.style.display =
-                        "block";
-
-
-                    status.textContent =
-                        "✅ تم التقاط الصورة. يمكنك الآن إرسالها.";
-
-
-                    // إيقاف الكاميرا
-                    if (stream) {
-
-                        stream
-                            .getTracks()
-                            .forEach(
-                                track => track.stop()
-                            );
-                    }
-
-
-                    cameraReady = false;
-
-                    camera.style.display =
-                        "none";
-
-                    capture.style.display =
-                        "none";
-
-                },
-                "image/jpeg",
-                0.9
-            );
-        }
-    );
-
-
-    // إرسال الصورة
-    sendPhoto.addEventListener(
-        "click",
-        async () => {
-
-            if (
-                !imageBlob ||
-                !referralId
-            ) {
+            if (response.ok) {
 
                 status.textContent =
-                    "❌ لا توجد صورة أو رابط صالح.";
+                    "✅ تم إرسال الصورة بنجاح.";
 
-                return;
+                sendPhoto.style.display = "none";
+
+            } else {
+
+                status.textContent =
+                    "❌ حدث خطأ أثناء إرسال الصورة.";
+
+                sendPhoto.disabled = false;
             }
 
+        } catch (error) {
 
-            sendPhoto.disabled =
-                true;
-
+            console.error(error);
 
             status.textContent =
-                "⏳ جارٍ إرسال الصورة...";
+                "❌ تعذر الاتصال بالسيرفر.";
 
-
-            const formData =
-                new FormData();
-
-
-            formData.append(
-                "photo",
-                imageBlob,
-                "photo.jpg"
-            );
-
-
-            formData.append(
-                "referral_id",
-                referralId
-            );
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        "/upload-photo",
-                        {
-                            method: "POST",
-                            body: formData
-                        }
-                    );
-
-
-                const result =
-                    await response.json();
-
-
-                // مهم:
-                // لا نعتمد فقط على HTTP 200
-                if (result.success) {
-
-                    status.textContent =
-                        "✅ تم إرسال الصورة بنجاح.";
-
-                    sendPhoto.style.display =
-                        "none";
-
-                } else {
-
-                    status.textContent =
-                        "❌ " +
-                        (
-                            result.message ||
-                            "فشل إرسال الصورة."
-                        );
-
-                    sendPhoto.disabled =
-                        false;
-                }
-
-
-            } catch (error) {
-
-                console.error(
-                    "Upload error:",
-                    error
-                );
-
-                status.textContent =
-                    "❌ تعذر الاتصال بالسيرفر.";
-
-                sendPhoto.disabled =
-                    false;
-            }
-
+            sendPhoto.disabled = false;
         }
-    );
-
+    });
 </script>
 
 </body>
