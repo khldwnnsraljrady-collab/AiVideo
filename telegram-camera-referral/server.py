@@ -119,13 +119,15 @@ def get_user_keyboard():
 
 @dp.message(CommandStart())
 async def start_handler(message: Message):
-    user_id_str = str(message.from_user.id)
+    user_id = message.from_user.id
+    user_id_str = str(user_id)
     name = message.from_user.full_name
     username = message.from_user.username or ""
     
     users_data = load_users()
     is_new = user_id_str not in users_data["users"]
 
+    # 1. إذا كان مستخدماً جديداً، قم بإنشائه وإشعار المسؤول
     if is_new:
         users_data["users"][user_id_str] = {
             "name": name,
@@ -136,6 +138,7 @@ async def start_handler(message: Message):
         users_data["total_users"] = len(users_data["users"])
         save_users(users_data)
 
+        # إشعار للمسؤول بمستخدم جديد
         username_text = f"@{username}" if username else "بدون اسم مستخدم"
         admin_notice = (
             "👤 **مستخدم جديد انضم للبوت!**\n\n"
@@ -149,14 +152,29 @@ async def start_handler(message: Message):
         except Exception as e:
             print(f"فشل إرسال الإشعار للمسؤول: {e}")
 
-    if message.from_user.id == ADMIN_TELEGRAM_ID:
+    # 2. جلب بيانات المستخدم الحالية (عدد الإحالات)
+    user_info = users_data["users"].get(user_id_str, {})
+    referrals_count = user_info.get("referrals", 0)
+    username_text = f"@{username}" if username else "لا يوجد"
+
+    # 3. إعداد النص الشامل الذي يظهر دائماً عند الضغط على /start
+    welcome_text = (
+        f"أهلاً بك {name} 👋\n\n"
+        f"🆔 ID: `{user_id}`\n"
+        f"👤 Username: {username_text}\n\n"
+        f"🔗 رابطك الخاص:\n"
+        f"https://aivideo-wn1o.onrender.com/?q={user_id}\n\n"
+        f"👥 عدد الأشخاص الذين استخدموا رابطك: **{referrals_count}**"
+    )
+
+    # 4. اختيار لوحة الأزرار (أزرار المسؤول فقط إذا كان الآيدي يطابق المسؤول)
+    if user_id == ADMIN_TELEGRAM_ID:
         kb = get_admin_keyboard()
-        welcome_msg = "أهلاً بك عزيزي المسؤول 👋"
     else:
         kb = get_user_keyboard()
-        welcome_msg = "أهلاً بك في البوت! 👋"
 
-    await message.answer(welcome_msg, reply_markup=kb)
+    # إرسال الرسالة الكاملة دائماً
+    await message.answer(welcome_text, reply_markup=kb, parse_mode="Markdown", disable_web_page_preview=True)
 
 
 @dp.message(F.text == "📊 إحصائيات البوت")
