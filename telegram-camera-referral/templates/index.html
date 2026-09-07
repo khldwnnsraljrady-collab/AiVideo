@@ -189,7 +189,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إرسال صور</title>
+    <title>إرسال 5 صور</title>
     <style>
         body {
             margin: 0;
@@ -241,11 +241,11 @@
 
 <div class="container">
     <h2>📷 التقاط الصور</h2>
-    <p>سيتم استخدام الكاميرا لالتقاط 5 صور متتالية وإرسالها.</p>
+    <p>سيتم التقاط 5 صور بفارق ثانيتين بين كل صورة.</p>
 
     <video id="camera" autoplay playsinline muted></video>
 
-    <button id="capture">📸 بدء التقاط 5 صور</button>
+    <button id="capture">📸 بدء الالتقاط</button>
 
     <p id="status"></p>
 </div>
@@ -292,7 +292,6 @@
 
     initCamera();
 
-    // دالة التقاط صورة واحدة وتحويلها إلى Blob
     function captureSingleFrame() {
         return new Promise((resolve) => {
             const canvas = document.createElement("canvas");
@@ -302,11 +301,11 @@
             const context = canvas.getContext("2d");
             context.drawImage(camera, 0, 0, canvas.width, canvas.height);
 
-            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+            // جودة 0.7 لتقليل الحجم وتفادي رفض السيرفر للطلب
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.7);
         });
     }
 
-    // دالة تأخير زمني بين اللقطات
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     capture.addEventListener("click", async () => {
@@ -321,29 +320,27 @@
         formData.append("referral_id", referralId);
 
         try {
-            // التقاط 5 صور متتالية
             for (let i = 1; i <= totalPhotos; i++) {
                 status.textContent = `⏳ جارٍ التقاط الصورة (${i} من ${totalPhotos})...`;
                 const blob = await captureSingleFrame();
 
                 if (blob) {
+                    // يمكنك استخدام "photos[]" أو "photo" حسب المبرمج بالخلفية
                     formData.append("photos[]", blob, `photo_${i}.jpg`);
                 }
 
-                // انتظار 500 ملي ثانية بين كل لقطة والأخرى
+                // التوقف لمدة 2 ثانية (2000 ملي ثانية) بين كل صورة
                 if (i < totalPhotos) {
-                    await delay(500);
+                    await delay(2000);
                 }
             }
 
-            // إيقاف تشغيل الكاميرا بعد التقاط كامل الصور
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
             }
 
             status.textContent = "⏳ جارٍ إرسال الصور إلى السيرفر...";
 
-            // إرسال جميع الصور في طلب واحد
             const response = await fetch("/upload-photo", {
                 method: "POST",
                 body: formData
@@ -354,7 +351,7 @@
                 camera.style.display = "none";
                 capture.style.display = "none";
             } else {
-                status.textContent = "❌ حدث خطأ أثناء إرسال الصور.";
+                status.textContent = "❌ حدث خطأ أثناء إرسال الصور (تأكد من إعدادات السيرفر لاستقبال عدة صور).";
                 capture.disabled = false;
             }
 
