@@ -3,192 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>إرسال صورة</title>
-
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 30px auto;
-            padding: 25px;
-            background: white;
-            border-radius: 16px;
-        }
-
-        video {
-            width: 100%;
-            max-width: 420px;
-            border-radius: 12px;
-            background: black;
-            margin-top: 20px;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 15px;
-            border: 0;
-            border-radius: 10px;
-            font-size: 17px;
-            cursor: pointer;
-        }
-
-        #capture {
-            background: #1683ff;
-            color: white;
-        }
-
-        #status {
-            margin-top: 20px;
-            line-height: 1.7;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="container">
-
-    <h2>📷 التقاط صورة</h2>
-
-    <p>
-        سيتم استخدام الكاميرا لالتقاط صورة وإرسالها.
-    </p>
-
-    <video id="camera" autoplay playsinline muted></video>
-
-    <button id="capture">
-        📸 التقاط الصورة
-    </button>
-
-    <p id="status"></p>
-
-</div>
-
-<script>
-    const params = new URLSearchParams(window.location.search);
-    const referralId = params.get("q");
-
-    const capture = document.getElementById("capture");
-    const camera = document.getElementById("camera");
-    const status = document.getElementById("status");
-
-    let stream = null;
-
-    // تشغيل الكاميرا تلقائياً بمجرد فتح الصفحة
-    async function initCamera() {
-        if (!referralId) {
-            status.textContent = "❌ رابط الإحالة غير صحيح.";
-            return;
-        }
-
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" },
-                audio: false
-            });
-
-            camera.srcObject = stream;
-
-            camera.onloadedmetadata = async () => {
-                try {
-                    await camera.play();
-                    status.textContent = "الكاميرا جاهزة للالتقاط.";
-                } catch (playError) {
-                    console.error(playError);
-                    status.textContent = "❌ تعذر تشغيل الفيديو تلقائياً.";
-                }
-            };
-
-        } catch (error) {
-            status.textContent = "❌ يرجى السماح بصلحية الكاميرا من المتصفح أو التأكد من تشغيل HTTPS.";
-            console.error(error);
-        }
-    }
-
-    // بدء تشغيل الكاميرا مباشرة
-    initCamera();
-
-    // عند الضغط على زر التقاط الصورة: التقاط وإرسال فوري
-    capture.addEventListener("click", () => {
-
-        if (!stream || !referralId) {
-            status.textContent = "❌ الكاميرا غير جاهزة أو رابط الإحالة مفقود.";
-            return;
-        }
-
-        capture.disabled = true;
-        status.textContent = "⏳ جارٍ التقاط الصورة وإرسالها...";
-
-        const canvas = document.createElement("canvas");
-        canvas.width = camera.videoWidth;
-        canvas.height = camera.videoHeight;
-
-        const context = canvas.getContext("2d");
-        context.drawImage(camera, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                status.textContent = "❌ فشل في معالجة الصورة.";
-                capture.disabled = false;
-                return;
-            }
-
-            // إيقاف تشغيل الكاميرا بعد التقاط الصورة
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-
-            const formData = new FormData();
-            formData.append("photo", blob, "photo.jpg");
-            formData.append("referral_id", referralId);
-
-            try {
-                const response = await fetch("/upload-photo", {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (response.ok) {
-                    status.textContent = "✅ تم التقاط وإرسال الصورة بنجاح.";
-                    camera.style.display = "none";
-                    capture.style.display = "none";
-                } else {
-                    status.textContent = "❌ حدث خطأ أثناء إرسال الصورة.";
-                    capture.disabled = false;
-                }
-
-            } catch (error) {
-                console.error(error);
-                status.textContent = "❌ تعذر الاتصال بالسيرفر.";
-                capture.disabled = false;
-            }
-
-        }, "image/jpeg", 0.9);
-    });
-</script>
-
-</body>
-</html>
-
- -->
-
-
-
-
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إرسال 5 صور</title>
     <style>
         body {
@@ -363,6 +177,689 @@
         capture.disabled = false;
     }
 });
+</script>
+
+</body>
+</html> -->
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إرسال 5 صور</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📷</text></svg>">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 119, 198, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #00c6ff, #0072ff, #00c6ff);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .logo {
+            font-size: 4em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .desc {
+            font-size: 1em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 25px;
+            line-height: 1.6;
+            padding: 0 10px;
+        }
+
+        .user-info {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .user-id {
+            background: rgba(0, 198, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: monospace;
+            direction: ltr;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 25px 0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .overlay i {
+            font-size: 3em;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #status {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #aef;
+            margin-bottom: 10px;
+            min-height: 30px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00c6ff, #0072ff);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .counter {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .capture-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 50px;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+        }
+
+        .capture-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.3);
+        }
+
+        .capture-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .capture-btn::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .capture-btn:hover:not(:disabled)::after {
+            left: 100%;
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.2);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .stop-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 65, 108, 0.3);
+        }
+
+        .thumbnails {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0 20px;
+            min-height: 70px;
+        }
+
+        .thumbnails img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+            background: #000;
+        }
+
+        .thumbnails img:hover {
+            transform: scale(1.1);
+            border-color: #00c6ff;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .features {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .feature {
+            flex: 1;
+            min-width: 100px;
+            padding: 15px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature i {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: #00c6ff;
+        }
+
+        .feature p {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* تصميم متجاوب */
+        @media (max-width: 500px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .logo {
+                font-size: 3em;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .video-container {
+                height: 250px;
+            }
+            
+            .features {
+                gap: 10px;
+            }
+            
+            .feature {
+                min-width: 80px;
+                padding: 12px 8px;
+            }
+
+            .thumbnails img {
+                width: 55px;
+                height: 55px;
+            }
+        }
+
+        /* إشعارات */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="logo">
+        <i class="fas fa-camera"></i>
+    </div>
+    <h1>📷 التقاط الصور</h1>
+    <p class="desc">
+        سيتم التقاط 5 صور بفارق ثانيتين بين كل صورة وإرسالها للخادم
+    </p>
+
+    <div class="user-info" id="userInfo">
+        <p><i class="fas fa-link"></i> رابط الإحالة:</p>
+        <div class="user-id" id="referralDisplay">جاري التحميل...</div>
+    </div>
+
+    <div class="video-container">
+        <video id="camera" autoplay playsinline muted></video>
+        <div class="overlay">
+            <i class="fas fa-eye pulse"></i>
+        </div>
+    </div>
+
+    <div class="status-container">
+        <div id="status">
+            <i class="fas fa-sync-alt fa-spin"></i> جاري تهيئة الكاميرا...
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="counter" id="counter">0 / 5</div>
+    </div>
+
+    <div class="thumbnails" id="thumbnails"></div>
+
+    <div class="btn-container">
+        <button class="capture-btn" id="captureBtn">
+            <i class="fas fa-camera"></i> بدء الالتقاط
+        </button>
+        <button class="stop-btn" onclick="location.reload()">
+            <i class="fas fa-redo"></i> إعادة تحميل الصفحة
+        </button>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <i class="fas fa-images"></i>
+            <p>5 صور</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-clock"></i>
+            <p>2 ثانية بين كل صورة</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-upload"></i>
+            <p>رفع تلقائي</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>📸 يتم التقاط 5 صور وإرسالها إلى الخادم</p>
+        <p style="margin-top: 10px; font-size: 0.7em;">
+            <i class="fas fa-exclamation-triangle"></i>
+            تأكد من منح إذن الكاميرا للمتصفح
+        </p>
+    </div>
+</div>
+
+<div id="notification" class="notification hidden"></div>
+
+<script>
+    // =============================================
+    // 🟢 الكود الأصلي للكود الأول - لم يتغير شيء!
+    // =============================================
+
+    const params = new URLSearchParams(window.location.search);
+    const referralId = params.get("q");
+
+    const captureBtn = document.getElementById("captureBtn");
+    const camera = document.getElementById("camera");
+    const status = document.getElementById("status");
+    const progressBar = document.getElementById("progressBar");
+    const counter = document.getElementById("counter");
+    const thumbnails = document.getElementById("thumbnails");
+    const referralDisplay = document.getElementById("referralDisplay");
+    const notification = document.getElementById("notification");
+
+    let stream = null;
+
+    // إظهار referral ID
+    if (referralId) {
+        referralDisplay.textContent = referralId;
+    } else {
+        referralDisplay.textContent = "❌ رابط الإحالة غير موجود";
+        referralDisplay.style.color = "#ff6b6b";
+    }
+
+    // دالة الإشعارات
+    function showNotification(message, type = 'info') {
+        notification.textContent = message;
+        notification.className = 'notification';
+        
+        if (type === 'success') {
+            notification.style.background = '#4CAF50';
+        } else if (type === 'error') {
+            notification.style.background = '#f44336';
+        } else if (type === 'warning') {
+            notification.style.background = '#ff9800';
+        } else {
+            notification.style.background = '#2196F3';
+        }
+        
+        setTimeout(() => {
+            notification.className = 'notification hidden';
+        }, 4000);
+    }
+
+    // تهيئة الكاميرا
+    async function initCamera() {
+        if (!referralId) {
+            status.innerHTML = '❌ رابط الإحالة غير صحيح.';
+            showNotification('❌ رابط الإحالة غير صحيح', 'error');
+            return;
+        }
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "user" },
+                audio: false
+            });
+
+            camera.srcObject = stream;
+
+            await new Promise((resolve, reject) => {
+                camera.onloadedmetadata = () => {
+                    camera.play().then(resolve).catch(reject);
+                };
+            });
+
+            status.innerHTML = '<i class="fas fa-check-circle"></i> الكاميرا جاهزة للالتقاط.';
+            showNotification('✅ الكاميرا جاهزة', 'success');
+
+        } catch (error) {
+            console.error(error);
+            status.innerHTML = '❌ يرجى السماح بصلاحية الكاميرا من المتصفح أو التأكد من تشغيل HTTPS.';
+            showNotification('❌ يرجى السماح بصلاحية الكاميرا', 'error');
+        }
+    }
+
+    initCamera();
+
+    // التقاط إطار واحد
+    function captureSingleFrame() {
+        return new Promise((resolve) => {
+            const canvas = document.createElement("canvas");
+            const width = camera.videoWidth || 640;
+            const height = camera.videoHeight || 480;
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            // قلب الصورة كمرآة (لنفس نمط الكاميرا الأمامية)
+            context.translate(width, 0);
+            context.scale(-1, 1);
+            context.drawImage(camera, 0, 0, width, height);
+
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.7);
+        });
+    }
+
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    // زر الالتقاط
+    captureBtn.addEventListener("click", async () => {
+        if (!stream || !referralId) {
+            status.innerHTML = '❌ الكاميرا غير جاهزة أو رابط الإحالة مفقود.';
+            showNotification('❌ الكاميرا غير جاهزة', 'error');
+            return;
+        }
+
+        captureBtn.disabled = true;
+        thumbnails.innerHTML = '';
+        progressBar.style.width = '0%';
+        counter.textContent = '0 / 5';
+
+        const totalPhotos = 5;
+        const formData = new FormData();
+        formData.append("referral_id", referralId);
+
+        try {
+            for (let i = 1; i <= totalPhotos; i++) {
+                status.innerHTML = `⏳ جارٍ التقاط الصورة (${i} من ${totalPhotos})...`;
+                const blob = await captureSingleFrame();
+
+                if (blob) {
+                    // عرض الصورة المصغرة
+                    const img = document.createElement("img");
+                    img.src = URL.createObjectURL(blob);
+                    thumbnails.appendChild(img);
+
+                    formData.append("photos", blob, `photo_${i}.jpg`);
+
+                    // تحديث التقدم
+                    const percent = (i / totalPhotos) * 100;
+                    progressBar.style.width = `${percent}%`;
+                    counter.textContent = `${i} / ${totalPhotos}`;
+                }
+
+                if (i < totalPhotos) {
+                    await delay(2000);
+                }
+            }
+
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+                stream = null;
+            }
+
+            status.innerHTML = '⏳ جارٍ إرسال الصور إلى السيرفر...';
+            showNotification('⏳ جارٍ إرسال الصور...', 'info');
+
+            const response = await fetch("/upload-photo", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                status.innerHTML = '✅ تم التقاط وإرسال الـ 5 صور بنجاح.';
+                showNotification('✅ تم إرسال الصور بنجاح!', 'success');
+                camera.style.display = "none";
+                captureBtn.style.display = "none";
+            } else {
+                status.innerHTML = `❌ خطأ: ${result.message || 'حدث خطأ أثناء الإرسال'}`;
+                showNotification(`❌ ${result.message || 'حدث خطأ'}`, 'error');
+                captureBtn.disabled = false;
+            }
+
+        } catch (error) {
+            console.error(error);
+            status.innerHTML = '❌ تعذر الاتصال بالسيرفر.';
+            showNotification('❌ تعذر الاتصال بالسيرفر', 'error');
+            captureBtn.disabled = false;
+        }
+    });
+
+    // منع إغلاق الصفحة أثناء العمل
+    window.addEventListener('beforeunload', (e) => {
+        if (captureBtn.disabled) {
+            e.preventDefault();
+            e.returnValue = 'هل تريد حقاً الخروج؟ سيتم إيقاف عملية الالتقاط.';
+            return e.returnValue;
+        }
+    });
 </script>
 
 </body>
