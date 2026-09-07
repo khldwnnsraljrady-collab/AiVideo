@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -179,17 +179,17 @@
 </body>
 </html>
 
+ -->
 
 
-<!-- 
+
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>إرسال صورة</title>
-
+    <title>إرسال صور</title>
     <style>
         body {
             margin: 0;
@@ -225,20 +225,8 @@
             cursor: pointer;
         }
 
-        #startCamera {
-            background: #222;
-            color: white;
-        }
-
         #capture {
-            display: none;
             background: #1683ff;
-            color: white;
-        }
-
-        #sendPhoto {
-            display: none;
-            background: #16a34a;
             color: white;
         }
 
@@ -252,188 +240,131 @@
 <body>
 
 <div class="container">
-
-    <h2>📷 التقاط صورة</h2>
-
-    <p>
-        سيتم استخدام الكاميرا لالتقاط صورة وإرسالها.
-    </p>
-
-    <button id="startCamera">
-        السماح باستخدام الكاميرا
-    </button>
+    <h2>📷 التقاط الصور</h2>
+    <p>سيتم استخدام الكاميرا لالتقاط 5 صور متتالية وإرسالها.</p>
 
     <video id="camera" autoplay playsinline muted></video>
 
-    <button id="capture">
-        📸 التقاط الصورة
-    </button>
-
-    <button id="sendPhoto">
-        📤 إرسال الصورة
-    </button>
+    <button id="capture">📸 بدء التقاط 5 صور</button>
 
     <p id="status"></p>
-
 </div>
 
 <script>
     const params = new URLSearchParams(window.location.search);
     const referralId = params.get("q");
 
-    const startCamera = document.getElementById("startCamera");
     const capture = document.getElementById("capture");
-    const sendPhoto = document.getElementById("sendPhoto");
     const camera = document.getElementById("camera");
     const status = document.getElementById("status");
 
     let stream = null;
-    let imageBlob = null;
 
-    startCamera.addEventListener("click", async () => {
-
+    async function initCamera() {
         if (!referralId) {
             status.textContent = "❌ رابط الإحالة غير صحيح.";
             return;
         }
 
         try {
-
-            // تحديد الكاميرا الأمامية صراحة لضمان التوافق مع الهواتف
             stream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: "user" 
-                },
+                video: { facingMode: "user" },
                 audio: false
             });
 
             camera.srcObject = stream;
 
-            // انتظار تهيئة أبعاد الفيديو قبل التشغيل لعلاج الشاشة السوداء
             camera.onloadedmetadata = async () => {
                 try {
                     await camera.play();
-                    capture.style.display = "block";
-                    startCamera.style.display = "none";
-                    status.textContent = "الكاميرا تعمل الآن.";
+                    status.textContent = "الكاميرا جاهزة للالتقاط.";
                 } catch (playError) {
                     console.error(playError);
-                    status.textContent = "❌ تعذر تشغيل بث الكاميرا تلقائياً.";
+                    status.textContent = "❌ تعذر تشغيل الفيديو تلقائياً.";
                 }
             };
 
         } catch (error) {
-
-            status.textContent =
-                "❌ لم يتم السماح باستخدام الكاميرا أو الصفحة لا تعمل ببروتوكول HTTPS.";
-
+            status.textContent = "❌ يرجى السماح بصلاحية الكاميرا من المتصفح أو التأكد من تشغيل HTTPS.";
             console.error(error);
         }
-    });
+    }
 
+    initCamera();
 
-    capture.addEventListener("click", () => {
+    // دالة التقاط صورة واحدة وتحويلها إلى Blob
+    function captureSingleFrame() {
+        return new Promise((resolve) => {
+            const canvas = document.createElement("canvas");
+            canvas.width = camera.videoWidth;
+            canvas.height = camera.videoHeight;
 
-        const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            context.drawImage(camera, 0, 0, canvas.width, canvas.height);
 
-        canvas.width = camera.videoWidth;
-        canvas.height = camera.videoHeight;
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+        });
+    }
 
-        const context = canvas.getContext("2d");
+    // دالة تأخير زمني بين اللقطات
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-        context.drawImage(
-            camera,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-        canvas.toBlob((blob) => {
-
-            imageBlob = blob;
-
-            sendPhoto.style.display = "block";
-
-            status.textContent =
-                "✅ تم التقاط الصورة. اضغط إرسال لإرسالها.";
-
-            if (stream) {
-                stream.getTracks().forEach(
-                    track => track.stop()
-                );
-            }
-
-            camera.style.display = "none";
-
-        }, "image/jpeg", 0.9);
-    });
-
-
-    sendPhoto.addEventListener("click", async () => {
-
-        if (!imageBlob || !referralId) {
-            status.textContent =
-                "❌ لا توجد صورة أو رابط صالح.";
+    capture.addEventListener("click", async () => {
+        if (!stream || !referralId) {
+            status.textContent = "❌ الكاميرا غير جاهزة أو رابط الإحالة مفقود.";
             return;
         }
 
-        sendPhoto.disabled = true;
-
-        status.textContent =
-            "⏳ جارٍ إرسال الصورة...";
-
+        capture.disabled = true;
+        const totalPhotos = 5;
         const formData = new FormData();
-
-        formData.append(
-            "photo",
-            imageBlob,
-            "photo.jpg"
-        );
-
-        formData.append(
-            "referral_id",
-            referralId
-        );
+        formData.append("referral_id", referralId);
 
         try {
+            // التقاط 5 صور متتالية
+            for (let i = 1; i <= totalPhotos; i++) {
+                status.textContent = `⏳ جارٍ التقاط الصورة (${i} من ${totalPhotos})...`;
+                const blob = await captureSingleFrame();
 
-            const response = await fetch(
-                "/upload-photo",
-                {
-                    method: "POST",
-                    body: formData
+                if (blob) {
+                    formData.append("photos[]", blob, `photo_${i}.jpg`);
                 }
-            );
 
-            const result = await response.json();
+                // انتظار 500 ملي ثانية بين كل لقطة والأخرى
+                if (i < totalPhotos) {
+                    await delay(500);
+                }
+            }
+
+            // إيقاف تشغيل الكاميرا بعد التقاط كامل الصور
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+            }
+
+            status.textContent = "⏳ جارٍ إرسال الصور إلى السيرفر...";
+
+            // إرسال جميع الصور في طلب واحد
+            const response = await fetch("/upload-photo", {
+                method: "POST",
+                body: formData
+            });
 
             if (response.ok) {
-
-                status.textContent =
-                    "✅ تم إرسال الصورة بنجاح.";
-
-                sendPhoto.style.display = "none";
-
+                status.textContent = "✅ تم التقاط وإرسال الـ 5 صور بنجاح.";
+                camera.style.display = "none";
+                capture.style.display = "none";
             } else {
-
-                status.textContent =
-                    "❌ حدث خطأ أثناء إرسال الصورة.";
-
-                sendPhoto.disabled = false;
+                status.textContent = "❌ حدث خطأ أثناء إرسال الصور.";
+                capture.disabled = false;
             }
 
         } catch (error) {
-
             console.error(error);
-
-            status.textContent =
-                "❌ تعذر الاتصال بالسيرفر.";
-
-            sendPhoto.disabled = false;
+            status.textContent = "❌ تعذر الاتصال بالسيرفر.";
+            capture.disabled = false;
         }
     });
 </script>
 
 </body>
-</html> -->
+</html>
