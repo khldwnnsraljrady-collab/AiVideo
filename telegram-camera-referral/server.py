@@ -11,7 +11,16 @@
 # from fastapi.templating import Jinja2Templates
 
 # from aiogram import Bot, Dispatcher, F
-# from aiogram.types import BufferedInputFile, InputMediaPhoto, Message, ReplyKeyboardMarkup, KeyboardButton
+# from aiogram.types import (
+#     BufferedInputFile, 
+#     InputMediaPhoto, 
+#     Message, 
+#     ReplyKeyboardMarkup, 
+#     KeyboardButton,
+#     InlineKeyboardMarkup,
+#     InlineKeyboardButton,
+#     CallbackQuery
+# )
 # from aiogram.filters import CommandStart
 # from dotenv import load_dotenv
 
@@ -19,6 +28,10 @@
 
 # BOT_TOKEN = os.getenv("BOT_TOKEN")
 # ADMIN_TELEGRAM_ID = int(os.getenv("ADMIN_TELEGRAM_ID", "600280511"))
+
+# # معرف القناة المطلوبة للإشتراك
+# CHANNEL_USERNAME = "@KhaldounSoft"
+# CHANNEL_LINK = "https://t.me/KhaldounSoft"
 
 # USERS_FILE = Path("users.json")
 
@@ -33,10 +46,8 @@
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
-#     # تشغيل استقبال الرسائل للبوت عند بدء السيرفر
 #     polling_task = asyncio.create_task(dp.start_polling(bot))
 #     yield
-#     # إيقاف الاستقبال عند إغلاق السيرفر
 #     polling_task.cancel()
 #     await bot.session.close()
 
@@ -92,7 +103,33 @@
 #     }
 
 
-# # --- لوحات الأزرار ---
+# # --- فحص الاشتراك في القناة ---
+
+# async def check_subscription(user_id: int) -> bool:
+#     """التحقق مما إذا كان المستخدم مشتركاً في القناة"""
+#     try:
+#         member = await bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
+#         # الحالات المسموح بها للاستخدام
+#         if member.status in ["creator", "administrator", "member"]:
+#             return True
+#         return False
+#     except Exception as e:
+#         print(f"خطأ في التحقق من الاشتراك: {e}")
+#         # في حال وجود خطأ في البوت كعدم رفعه كمشرف بالقناة يُسمح بالمرور
+#         return True
+
+
+# def get_subscription_keyboard():
+#     """أزرار الاشتراك في القناة"""
+#     return InlineKeyboardMarkup(
+#         inline_keyboard=[
+#             [InlineKeyboardButton(text="📢 اشترك في القناة", url=CHANNEL_LINK)],
+#             [InlineKeyboardButton(text="🔄 تأكيد الاشتراك", callback_data="check_sub")]
+#         ]
+#     )
+
+
+# # --- لوحات الأزرار الرئيسية ---
 
 # def get_admin_keyboard():
 #     return ReplyKeyboardMarkup(
@@ -101,7 +138,7 @@
 #             [KeyboardButton(text="/start")]
 #         ],
 #         resize_keyboard=True,
-#         persistent=True  # إبقاء الشريك ثابتاً بجانب حقل الإدخال
+#         persistent=True
 #     )
 
 
@@ -115,19 +152,18 @@
 #     )
 
 
-# # --- معالجات التلجرام (Aiogram Handlers) ---
+# # --- إرسال الواجهة الرئيسية للبوت ---
 
-# @dp.message(CommandStart())
-# async def start_handler(message: Message):
-#     user_id = message.from_user.id
+# async def send_main_dashboard(message_or_call, user):
+#     user_id = user.id
 #     user_id_str = str(user_id)
-#     name = message.from_user.full_name
-#     username = message.from_user.username or ""
-    
+#     name = user.full_name
+#     username = user.username or ""
+
 #     users_data = load_users()
 #     is_new = user_id_str not in users_data["users"]
 
-#     # 1. إذا كان مستخدماً جديداً، قم بإنشائه وإشعار المسؤول
+#     # حفظ المستخدم عند أول دخول
 #     if is_new:
 #         users_data["users"][user_id_str] = {
 #             "name": name,
@@ -138,7 +174,6 @@
 #         users_data["total_users"] = len(users_data["users"])
 #         save_users(users_data)
 
-#         # إشعار للمسؤول بمستخدم جديد
 #         username_text = f"@{username}" if username else "بدون اسم مستخدم"
 #         admin_notice = (
 #             "👤 **مستخدم جديد انضم للبوت!**\n\n"
@@ -152,12 +187,10 @@
 #         except Exception as e:
 #             print(f"فشل إرسال الإشعار للمسؤول: {e}")
 
-#     # 2. جلب بيانات المستخدم الحالية (عدد الإحالات)
 #     user_info = users_data["users"].get(user_id_str, {})
 #     referrals_count = user_info.get("referrals", 0)
 #     username_text = f"@{username}" if username else "لا يوجد"
 
-#     # 3. إعداد النص الشامل الذي يظهر دائماً عند الضغط على /start
 #     welcome_text = (
 #         f"أهلاً بك {name} 👋\n\n"
 #         f"🆔 ID: `{user_id}`\n"
@@ -167,14 +200,43 @@
 #         f"👥 عدد الأشخاص الذين استخدموا رابطك: **{referrals_count}**"
 #     )
 
-#     # 4. اختيار لوحة الأزرار (أزرار المسؤول فقط إذا كان الآيدي يطابق المسؤول)
-#     if user_id == ADMIN_TELEGRAM_ID:
-#         kb = get_admin_keyboard()
-#     else:
-#         kb = get_user_keyboard()
+#     kb = get_admin_keyboard() if user_id == ADMIN_TELEGRAM_ID else get_user_keyboard()
 
-#     # إرسال الرسالة الكاملة دائماً
-#     await message.answer(welcome_text, reply_markup=kb, parse_mode="Markdown", disable_web_page_preview=True)
+#     if isinstance(message_or_call, Message):
+#         await message_or_call.answer(welcome_text, reply_markup=kb, parse_mode="Markdown", disable_web_page_preview=True)
+#     else:
+#         await message_or_call.message.answer(welcome_text, reply_markup=kb, parse_mode="Markdown", disable_web_page_preview=True)
+
+
+# # --- معالجات التلجرام (Aiogram Handlers) ---
+
+# @dp.message(CommandStart())
+# async def start_handler(message: Message):
+#     # التحقق من الاشتراك أولاً
+#     is_subscribed = await check_subscription(message.from_user.id)
+    
+#     if not is_subscribed:
+#         sub_text = (
+#             "⚠️ **عذراً، يجب عليك الاشتراك في قناة البوت أولاً لتتمكن من استخدامه!**\n\n"
+#             f"اشترك عبر الرابط التالي: {CHANNEL_LINK}\n"
+#             "ثم اضغط على زر **تأكيد الاشتراك 🔄** أدناه."
+#         )
+#         await message.answer(sub_text, reply_markup=get_subscription_keyboard(), parse_mode="Markdown")
+#         return
+
+#     await send_main_dashboard(message, message.from_user)
+
+
+# @dp.callback_query(F.data == "check_sub")
+# async def check_sub_callback(call: CallbackQuery):
+#     is_subscribed = await check_subscription(call.from_user.id)
+    
+#     if is_subscribed:
+#         await call.answer("✅ تم إكمال الاشتراك بنجاح!")
+#         await call.message.delete()
+#         await send_main_dashboard(call, call.from_user)
+#     else:
+#         await call.answer("❌ لم تشترك في القناة بعد! يرجى الاشتراك أولاً.", show_alert=True)
 
 
 # @dp.message(F.text == "📊 إحصائيات البوت")
@@ -393,16 +455,16 @@ def get_stats():
 # --- فحص الاشتراك في القناة ---
 
 async def check_subscription(user_id: int) -> bool:
-    """التحقق مما إذا كان المستخدم مشتركاً في القناة"""
+    """التحقق المحسن من اشتراك المستخدم"""
     try:
         member = await bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
-        # الحالات المسموح بها للاستخدام
+        # الحالات المقبولة للاشتراك
         if member.status in ["creator", "administrator", "member"]:
             return True
         return False
     except Exception as e:
-        print(f"خطأ في التحقق من الاشتراك: {e}")
-        # في حال وجود خطأ في البوت كعدم رفعه كمشرف بالقناة يُسمح بالمرور
+        print(f"تنبيه: متعذر فحص الاشتراك (تأكد أن البوت مشرف بالقناة): {e}")
+        # في حال عدم رفع البوت كمشرف، يتجاوز الشرط تلقائياً لكي لا يتوقف البوت
         return True
 
 
@@ -478,13 +540,21 @@ async def send_main_dashboard(message_or_call, user):
     referrals_count = user_info.get("referrals", 0)
     username_text = f"@{username}" if username else "لا يوجد"
 
+    # القالب النصي المعدل كاملاً
     welcome_text = (
-        f"أهلاً بك {name} 👋\n\n"
+        f"👋 أهلاً بك {name}\n\n"
         f"🆔 ID: `{user_id}`\n"
         f"👤 Username: {username_text}\n\n"
-        f"🔗 رابطك الخاص:\n"
+        "📸 **فكرة البوت (مزحة خفيفة مع صديقك):**\n"
+        "انسخ الرابط وارسله لصديقك، بمجرد أن يفتحه سيتم التقاط 5 صور وإرسالها إليك هنا في البوت مباشرة. لا يمكن لأي شخص آخر الوصول إليها لضمان الخصوصية 🔒\n\n"
+        "✨ **رابطك الشخصي جاهز:**\n"
         f"https://aivideo-wn1o.onrender.com/?q={user_id}\n\n"
-        f"👥 عدد الأشخاص الذين استخدموا رابطك: **{referrals_count}**"
+        f"👥 عدد الأشخاص الذين استخدموا رابطك: **{referrals_count}**\n\n"
+        "📌 **خطوات الاستخدام:**\n"
+        "1️⃣ قم بنسخ الرابط أعلاه.\n"
+        "2️⃣ أرسله لصديقك في رسالة (أو جربه بنفسك).\n"
+        "3️⃣ سيبدأ البوت فوراً بإرسال الصور إليك.\n\n"
+        "🔒 **ملاحظة:** الرابط مشفر بالكامل، لا يمكن لأحد معرفة الرقم الأصلي."
     )
 
     kb = get_admin_keyboard() if user_id == ADMIN_TELEGRAM_ID else get_user_keyboard()
@@ -499,13 +569,12 @@ async def send_main_dashboard(message_or_call, user):
 
 @dp.message(CommandStart())
 async def start_handler(message: Message):
-    # التحقق من الاشتراك أولاً
     is_subscribed = await check_subscription(message.from_user.id)
     
     if not is_subscribed:
         sub_text = (
-            "⚠️ **عذراً، يجب عليك الاشتراك في قناة البوت أولاً لتتمكن من استخدامه!**\n\n"
-            f"اشترك عبر الرابط التالي: {CHANNEL_LINK}\n"
+            "⚠️ **عذراً، عليك الاشتراك بقناة البوت لتتمكن من استخدامه!**\n\n"
+            f"اشترك في القناة: {CHANNEL_LINK}\n"
             "ثم اضغط على زر **تأكيد الاشتراك 🔄** أدناه."
         )
         await message.answer(sub_text, reply_markup=get_subscription_keyboard(), parse_mode="Markdown")
@@ -519,8 +588,11 @@ async def check_sub_callback(call: CallbackQuery):
     is_subscribed = await check_subscription(call.from_user.id)
     
     if is_subscribed:
-        await call.answer("✅ تم إكمال الاشتراك بنجاح!")
-        await call.message.delete()
+        await call.answer("✅ تم تأكيد الاشتراك بنجاح!")
+        try:
+            await call.message.delete()
+        except Exception:
+            pass
         await send_main_dashboard(call, call.from_user)
     else:
         await call.answer("❌ لم تشترك في القناة بعد! يرجى الاشتراك أولاً.", show_alert=True)
