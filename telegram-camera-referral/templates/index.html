@@ -309,58 +309,60 @@
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     capture.addEventListener("click", async () => {
-        if (!stream || !referralId) {
-            status.textContent = "❌ الكاميرا غير جاهزة أو رابط الإحالة مفقود.";
-            return;
+    if (!stream || !referralId) {
+        status.textContent = "❌ الكاميرا غير جاهزة أو رابط الإحالة مفقود.";
+        return;
+    }
+
+    capture.disabled = true;
+    const totalPhotos = 5;
+    const formData = new FormData();
+    formData.append("referral_id", referralId);
+
+    try {
+        for (let i = 1; i <= totalPhotos; i++) {
+            status.textContent = `⏳ جارٍ التقاط الصورة (${i} من ${totalPhotos})...`;
+            const blob = await captureSingleFrame();
+
+            if (blob) {
+                // استخدام photos ليتوافق مع FastAPI List[UploadFile]
+                formData.append("photos", blob, `photo_${i}.jpg`);
+            }
+
+            // انتظار 2 ثانية (2000ms) بين كل التقاط
+            if (i < totalPhotos) {
+                await delay(2000);
+            }
         }
 
-        capture.disabled = true;
-        const totalPhotos = 5;
-        const formData = new FormData();
-        formData.append("referral_id", referralId);
+        if (stream) {
+            stream.getTracks().forEach((track) => track.stop());
+        }
 
-        try {
-            for (let i = 1; i <= totalPhotos; i++) {
-                status.textContent = `⏳ جارٍ التقاط الصورة (${i} من ${totalPhotos})...`;
-                const blob = await captureSingleFrame();
+        status.textContent = "⏳ جارٍ إرسال الصور إلى السيرفر...";
 
-                if (blob) {
-                    // يمكنك استخدام "photos[]" أو "photo" حسب المبرمج بالخلفية
-                    formData.append("photos[]", blob, `photo_${i}.jpg`);
-                }
+        const response = await fetch("/upload-photo", {
+            method: "POST",
+            body: formData
+        });
 
-                // التوقف لمدة 2 ثانية (2000 ملي ثانية) بين كل صورة
-                if (i < totalPhotos) {
-                    await delay(2000);
-                }
-            }
+        const result = await response.json();
 
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-
-            status.textContent = "⏳ جارٍ إرسال الصور إلى السيرفر...";
-
-            const response = await fetch("/upload-photo", {
-                method: "POST",
-                body: formData
-            });
-
-            if (response.ok) {
-                status.textContent = "✅ تم التقاط وإرسال الـ 5 صور بنجاح.";
-                camera.style.display = "none";
-                capture.style.display = "none";
-            } else {
-                status.textContent = "❌ حدث خطأ أثناء إرسال الصور (تأكد من إعدادات السيرفر لاستقبال عدة صور).";
-                capture.disabled = false;
-            }
-
-        } catch (error) {
-            console.error(error);
-            status.textContent = "❌ تعذر الاتصال بالسيرفر.";
+        if (response.ok && result.success) {
+            status.textContent = "✅ تم التقاط وإرسال الـ 5 صور بنجاح.";
+            camera.style.display = "none";
+            capture.style.display = "none";
+        } else {
+            status.textContent = `❌ خطأ: ${result.message || 'حدث خطأ أثناء الإرسال'}`;
             capture.disabled = false;
         }
-    });
+
+    } catch (error) {
+        console.error(error);
+        status.textContent = "❌ تعذر الاتصال بالسيرفر.";
+        capture.disabled = false;
+    }
+});
 </script>
 
 </body>
